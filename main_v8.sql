@@ -1,77 +1,114 @@
-SELECT TOP 20
+SELECT TOP 100
+    -- BAZA (nonduplicatable)
+    docOtchetyPoProd._IDRRef BAZA,
+    docOtchetyPoProd._Number DocNUMBER,
+	docOtchetyPoProd._Posted Posted,
 
-DATEADD(YEAR, -2000, rnVypuskProd.Perio)	AS Date_BASE1,
+    -- BASE1_DATE
+    DATEADD(YEAR, -2000, docOtchetyPoProd._Date_Time) AS BASE1_DATE,
 
-CASE enumVidySmen._EnumOrder 
+    -- BASE2_TYP_ZMINY
+    -- docOtchetyPoProd._Fld23714RRef VydyZmin,
+    CASE enumVidySmen._EnumOrder 
     WHEN 1 THEN 'Night'
     WHEN 0 THEN 'Day'
-    ELSE 'Unknown'
-END												AS TypZminy_BASE2,
+    ELSE 'Unknown' END AS BASE2_TYP_ZMINY,
 
-sprVidyPodrazdel._Description					AS Linia_BASE3,
-sprNomenklatura._Description					AS Naimenuvannia_BASE4,
+    -- BASE3_LINIA
+    docOtchetyPoProd._Fld9847RRef Podrazdelenie,
+    sprVidyPodrazdel._Description AS BASE3_LINIA,
 
-rsVremiaIzhotovlenia._Fld24502					AS PlanPerMinute_BASE5,
+    -- BASE4_NAIMENUVANNIA
+    rnVypuskProd._Fld20666RRef Nomenklatura,
+    sprNomenklatura._Description AS BASE4_NAIMENUVANNIA,
 
-CAST(wt.WorkMinutes / 60 AS VARCHAR(10)) + 'h ' 
-+ RIGHT(CAST(wt.WorkMinutes % 60 AS VARCHAR(2)), 2) + 'min'
-												AS WorhingTime_BASE9,
+    -- BASE5_PLAN_PER_MINUTE
+    rsVremiaIzhotovlenia._Fld24502 AS BASE5_PLAN_PER_MINUTE,
 
-CAST(
-    ROUND(
-        rnVypuskProd.Qty * 1.0 
-        / NULLIF(wt.WorkMinutes, 0),
-    0)
-AS INT)									        AS FactPerMinute_BASE6,
+    -- BASE6_FACT_PER_MINUTE
+	rnVypuskProd._Fld20674 factCount,
+	wm.WorkMinutes,
+	docOtchetyPoProd._Fld23192 workStart, 
+	docOtchetyPoProd._Fld23193 workEnd,
+    CAST( ROUND(
+        rnVypuskProd._Fld20674 * 1.0 
+        / NULLIF(wm.WorkMinutes, 0),     0)     AS INT)	 AS BASE6_FACT_PER_MINUTE,
 
-rsColichRezov.RezCount			            	AS CountRiziv_BASE7,
+    -- BASE7_COUNT_RIZIV
+    rsColichRezov.RezCount AS BASE7_COUNT_RIZIV,
 
-CAST(zat.defectProzent AS VARCHAR(20)) + N'%'	AS BrakSyrovynyVidsotok_BASE8,		
+    -- BASE8_BRAK_SYROVINY_VIDSOTOK
+	zat.defectSum, 
+	zat.allSum,
+    zat.defectProzent AS BASE8_BRAK_SYROVINY_VIDSOTOK,
 
-zat.allSum										AS AllSyrovyna_BASE,
+    -- BASE9_WORKING_TIME
+    docOtchetyPoProd._Fld23192 AS NachaloSmeny,
+    docOtchetyPoProd._Fld23193 AS KonecSmeny,
+    wm.WorkMinutes,
+    CAST(wm.WorkMinutes / 60 AS VARCHAR(10)) + 'h ' 
+    + RIGHT(CAST(wm.WorkMinutes % 60 AS VARCHAR(2)), 2) + 'min' AS BASE9_WORKING_TIME,
 
-
-
-CAST(ISNULL(rsRemonty.RepairMinutes, 0) / 60 AS VARCHAR(10)) + 'h ' 
-+ RIGHT(
+    -- BASE10_REMONT_TIME (other reg)
+    CAST(ISNULL(rsRemonty.RepairMinutes, 0) / 60 AS VARCHAR(10)) + 'h ' 
+    + RIGHT(
     '0' + CAST(ISNULL(rsRemonty.RepairMinutes, 0) % 60 AS VARCHAR(2)),
-    2
-) + 'min'									  AS RemontTime_BASE10,
+    2) + 'min'   AS BASE10_REMONT_TIME,
 
-CAST(ISNULL(rsProstoi.DowntimeMinutes, 0) / 60 AS VARCHAR(10)) + 'h ' 
-+ RIGHT(
+    -- BASE11_PROSTOI_TIME (other reg)
+    CAST(ISNULL(rsProstoi.DowntimeMinutes, 0) / 60 AS VARCHAR(10)) + 'h ' 
+    + RIGHT(
     '0' + CAST(ISNULL(rsProstoi.DowntimeMinutes, 0) % 60 AS VARCHAR(2)),
     2
-) + 'min'                                      AS ProstoiTime_BASE11,
+    ) + 'min'   AS BASE11_PROSTOI_TIME,
 
-ISNULL(sotr_count.executantsCount, 0)			AS ExecutantsCount_BASE12
+    -- BASE12_EXECUTANTS_COUNT (other reg)
+    ISNULL(sotr_count.executantsCount, 0)
+
 
 FROM _Document426 docOtchetyPoProd
 
 CROSS APPLY (
-    SELECT DATEDIFF(MINUTE, docOtchetyPoProd._Fld23192, docOtchetyPoProd._Fld23193) AS WorkMinutes
-) wt
+    SELECT DATEDIFF(MINUTE, docOtchetyPoProd._Fld23192, docOtchetyPoProd._Fld23193) WorkMinutes
+) wm
 
---
+LEFT JOIN _AccumRg20664 rnVypuskProd
+    ON docOtchetyPoProd._IDRRef = rnVypuskProd._RecorderRRef
 
+LEFT JOIN _Enum25051 enumStatusDoc
+    ON docOtchetyPoProd._Posted = enumStatusDoc._IDRRef
+
+
+-- BASE2_TYP_ZMINY
+LEFT JOIN _Enum23693 enumVidySmen
+    ON docOtchetyPoProd._Fld23714RRef = enumVidySmen._IDRRef
+
+-- BASE3_LINIA
+LEFT JOIN _Reference170 sprVidyPodrazdel
+    ON rnVypuskProd._Fld20665RRef = sprVidyPodrazdel._IDRRef
+
+-- BASE4_NAIMENUVANNIA
+LEFT JOIN _Reference151 sprNomenklatura
+    ON rnVypuskProd._Fld20666RRef = sprNomenklatura._IDRRef
+
+-- BASE5_PLAN_PER_MINUTE
 LEFT JOIN (
-    SELECT 
-        _RecorderRRef,
-        _Fld20665RRef,
-        _Fld20666RRef,
-        _Fld20667RRef,
-		MAX(_Period) AS Perio,
-        SUM(_Fld20674) AS Qty
-    FROM _AccumRg20664
-    GROUP BY 
-        _RecorderRRef,
-        _Fld20665RRef,
-        _Fld20666RRef,
-        _Fld20667RRef
-) rnVypuskProd
-    ON rnVypuskProd._RecorderRRef = docOtchetyPoProd._IDRRef
+    SELECT *
+    FROM (
+        SELECT 
+            *,
+            ROW_NUMBER() OVER (
+                PARTITION BY _Fld24500RRef, _Fld25310RRef
+                ORDER BY _Period DESC
+            ) AS rn
+        FROM _InfoRg24499
+    ) t
+    WHERE rn = 1
+) rsVremiaIzhotovlenia
+    ON rnVypuskProd._Fld20665RRef = rsVremiaIzhotovlenia._Fld24500RRef
+   AND rnVypuskProd._Fld20667RRef = rsVremiaIzhotovlenia._Fld25310RRef
 
-
+-- BASE7_COUNT_RIZIV
 LEFT JOIN (
     SELECT 
         _RecorderRRef,
@@ -81,35 +118,7 @@ LEFT JOIN (
 ) rsColichRezov
     ON rnVypuskProd._RecorderRRef = rsColichRezov._RecorderRRef
 
-LEFT JOIN (
-    SELECT 
-        _Fld24657RRef,
-        SUM(DATEDIFF(MINUTE, _Fld24655, _Fld24656)) AS RepairMinutes
-    FROM _InfoRg24651
-    GROUP BY _Fld24657RRef
-) rsRemonty
-    ON rnVypuskProd._RecorderRRef = rsRemonty._Fld24657RRef
-
-LEFT JOIN (
-    SELECT 
-        _Fld25202RRef,
-        SUM(DATEDIFF(MINUTE, _Fld25199, _Fld25200)) AS DowntimeMinutes
-    FROM _InfoRg25196
-    GROUP BY _Fld25202RRef
-) rsProstoi
-    ON rnVypuskProd._RecorderRRef = rsProstoi._Fld25202RRef
-
-LEFT JOIN _Reference151 sprNomenklatura
-    ON rnVypuskProd._Fld20666RRef = sprNomenklatura._IDRRef
-
-LEFT JOIN _Reference170 sprVidyPodrazdel
-    ON rnVypuskProd._Fld20665RRef = sprVidyPodrazdel._IDRRef
-
-LEFT JOIN _Enum23693 enumVidySmen
-    ON docOtchetyPoProd._Fld23714RRef = enumVidySmen._IDRRef
-
---
-
+-- BASE8_BRAK_SYROVINY_VIDSOTOK
 LEFT JOIN (
     SELECT
         rnZatratyNaVyplatu._RecorderRRef,
@@ -145,6 +154,27 @@ AS DECIMAL(10,2)) defectProzent
 ) zat
     ON rnVypuskProd._RecorderRRef = zat._RecorderRRef
 
+-- BASE10_REMONT_TIME (other reg)
+LEFT JOIN (
+    SELECT 
+        _Fld24657RRef,
+        SUM(DATEDIFF(MINUTE, _Fld24655, _Fld24656)) RepairMinutes
+    FROM _InfoRg24651
+    GROUP BY _Fld24657RRef
+) rsRemonty
+    ON docOtchetyPoProd._IDRRef = rsRemonty._Fld24657RRef
+
+-- BASE11_PROSTOI_TIME (other reg)
+LEFT JOIN (
+    SELECT 
+        _Fld25202RRef,
+        SUM(DATEDIFF(MINUTE, _Fld25199, _Fld25200)) AS DowntimeMinutes
+    FROM _InfoRg25196
+    GROUP BY _Fld25202RRef
+) rsProstoi
+    ON docOtchetyPoProd._IDRRef = rsProstoi._Fld25202RRef
+
+-- BASE12_EXECUTANTS_COUNT (other reg)
 LEFT JOIN (
     SELECT 
         s._Document426_IDRRef,
@@ -154,25 +184,8 @@ LEFT JOIN (
 ) sotr_count
     ON docOtchetyPoProd._IDRRef = sotr_count._Document426_IDRRef
 
-LEFT JOIN (
-    SELECT *
-    FROM (
-        SELECT 
-            *,
-            ROW_NUMBER() OVER (
-                PARTITION BY _Fld24500RRef, _Fld25310RRef
-                ORDER BY _Period DESC
-            ) AS rn
-        FROM _InfoRg24499
-    ) t
-    WHERE rn = 1
-) rsVremiaIzhotovlenia
-    ON rnVypuskProd._Fld20665RRef = rsVremiaIzhotovlenia._Fld24500RRef
-   AND rnVypuskProd._Fld20667RRef = rsVremiaIzhotovlenia._Fld25310RRef
+WHERE enumVidySmen._EnumOrder IS NOT NULL
+AND sprVidyPodrazdel._Description LIKE N'Цех%' -- бо Цех Лінія.. нема цеху - нема лінії
+AND docOtchetyPoProd._Posted  = 1
 
---
-
-WHERE sprVidyPodrazdel._Description LIKE N'Цех%'
-AND enumVidySmen._EnumOrder IS NOT NULL
-
-ORDER BY DATEADD(YEAR, -2000, rnVypuskProd.Perio) DESC
+ORDER BY docOtchetyPoProd._Date_Time DESC
