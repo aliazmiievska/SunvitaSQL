@@ -3,8 +3,9 @@ SELECT
 DATEADD(YEAR, -2000, rnVypuskProd_base.Perio)	AS Date_BASE1,
 
 CASE enumVidySmen._EnumOrder 
-    WHEN 1 THEN 'ͳ���'
-    WHEN 0 THEN '�����'
+    WHEN 1 THEN 'Night'
+    WHEN 0 THEN 'Day'
+    ELSE 'Unknown'
 END												AS TypZminy_BASE2,
 
 sprVidyPodrazdel._Description					AS Linia_BASE3,
@@ -25,21 +26,21 @@ CAST(zat.defectProzent AS VARCHAR(20)) + N'%'	AS BrakSyrovynyVidsotok_BASE8,
 
 zat.allSum										AS AllSyrovyna_BASE,
 
-CAST(DATEDIFF(MINUTE, docOtchetyPoProd._Fld23192, docOtchetyPoProd._Fld23193)/60 AS VARCHAR(10)) + '��� ' 
-+ RIGHT(CAST(DATEDIFF(MINUTE, docOtchetyPoProd._Fld23192, docOtchetyPoProd._Fld23193)%60 AS VARCHAR(2)),2) + '��'
+CAST(DATEDIFF(MINUTE, docOtchetyPoProd._Fld23192, docOtchetyPoProd._Fld23193)/60 AS VARCHAR(10)) + 'h ' 
++ RIGHT(CAST(DATEDIFF(MINUTE, docOtchetyPoProd._Fld23192, docOtchetyPoProd._Fld23193)%60 AS VARCHAR(2)),2) + 'min'
 												AS WorhingTime_BASE9,
 
-CAST(ISNULL(rsRemonty.RepairMinutes, 0) / 60 AS VARCHAR(10)) + '��� ' 
+CAST(ISNULL(rsRemonty.RepairMinutes, 0) / 60 AS VARCHAR(10)) + 'h ' 
 + RIGHT(
     '0' + CAST(ISNULL(rsRemonty.RepairMinutes, 0) % 60 AS VARCHAR(2)),
     2
-) + '��'									  AS RemontTime_BASE10,
+) + 'min'									  AS RemontTime_BASE10,
 
-CAST(ISNULL(rsProstoi.DowntimeMinutes, 0) / 60 AS VARCHAR(10)) + '��� ' 
+CAST(ISNULL(rsProstoi.DowntimeMinutes, 0) / 60 AS VARCHAR(10)) + 'h ' 
 + RIGHT(
     '0' + CAST(ISNULL(rsProstoi.DowntimeMinutes, 0) % 60 AS VARCHAR(2)),
     2
-) + '��'                                      AS ProstoiTime_BASE11,
+) + 'min'                                      AS ProstoiTime_BASE11,
 
 ISNULL(sotr_count.executantsCount, 0)			AS ExecutantsCount_BASE12
 
@@ -113,7 +114,7 @@ LEFT JOIN (
         SUM(zatratyNaVyplatu._Fld21062) allSum,
 
         SUM(CASE 
-                WHEN stattiZatrat._Description LIKE N'�����������%' 
+                WHEN stattiZatrat._Description LIKE N'Технологічні%' 
                 THEN zatratyNaVyplatu._Fld21062 
                 ELSE 0 
             END) defectSum,
@@ -124,7 +125,7 @@ LEFT JOIN (
             WHEN SUM(zatratyNaVyplatu._Fld21062) = 0 THEN 0
             ELSE 
                 SUM(CASE 
-                        WHEN stattiZatrat._Description LIKE N'�����������%' 
+                        WHEN stattiZatrat._Description LIKE N'Технологічні%' 
                         THEN zatratyNaVyplatu._Fld21062 
                         ELSE 0 
                     END) * 100.0
@@ -169,7 +170,7 @@ LEFT JOIN (
 
 --
 
-WHERE sprVidyPodrazdel._Description LIKE N'���%'
+WHERE sprVidyPodrazdel._Description LIKE N'Цех%'
 AND enumVidySmen._EnumOrder IS NOT NULL
 
 ORDER BY DATEADD(YEAR, -2000, rnVypuskProd_base.Perio) DESC
