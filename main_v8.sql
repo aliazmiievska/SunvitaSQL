@@ -1,6 +1,6 @@
 SELECT TOP 20
 
-DATEADD(YEAR, -2000, rnVypuskProd_base.Perio)	AS Date_BASE1,
+DATEADD(YEAR, -2000, rnVypuskProd.Perio)	AS Date_BASE1,
 
 CASE enumVidySmen._EnumOrder 
     WHEN 1 THEN 'Night'
@@ -13,12 +13,16 @@ sprNomenklatura._Description					AS Naimenuvannia_BASE4,
 
 rsVremiaIzhotovlenia._Fld24502					AS PlanPerMinute_BASE5,
 
+CAST(wt.WorkMinutes / 60 AS VARCHAR(10)) + 'h ' 
++ RIGHT(CAST(wt.WorkMinutes % 60 AS VARCHAR(2)), 2) + 'min'
+												AS WorhingTime_BASE9,
+
 CAST(
     ROUND(
-        rnVypuskProd_base.Qty * 1.0 
-        / NULLIF(DATEDIFF(MINUTE, docOtchetyPoProd._Fld23192, docOtchetyPoProd._Fld23193), 0),
+        rnVypuskProd.Qty * 1.0 
+        / NULLIF(wt.WorkMinutes, 0),
     0)
-AS INT)											AS FactPerMinute_BASE6,
+AS INT)									        AS FactPerMinute_BASE6,
 
 rsColichRezov.RezCount			            	AS CountRiziv_BASE7,
 
@@ -26,9 +30,7 @@ CAST(zat.defectProzent AS VARCHAR(20)) + N'%'	AS BrakSyrovynyVidsotok_BASE8,
 
 zat.allSum										AS AllSyrovyna_BASE,
 
-CAST(DATEDIFF(MINUTE, docOtchetyPoProd._Fld23192, docOtchetyPoProd._Fld23193)/60 AS VARCHAR(10)) + 'h ' 
-+ RIGHT(CAST(DATEDIFF(MINUTE, docOtchetyPoProd._Fld23192, docOtchetyPoProd._Fld23193)%60 AS VARCHAR(2)),2) + 'min'
-												AS WorhingTime_BASE9,
+
 
 CAST(ISNULL(rsRemonty.RepairMinutes, 0) / 60 AS VARCHAR(10)) + 'h ' 
 + RIGHT(
@@ -46,6 +48,10 @@ ISNULL(sotr_count.executantsCount, 0)			AS ExecutantsCount_BASE12
 
 FROM _Document426 docOtchetyPoProd
 
+CROSS APPLY (
+    SELECT DATEDIFF(MINUTE, docOtchetyPoProd._Fld23192, docOtchetyPoProd._Fld23193) AS WorkMinutes
+) wt
+
 --
 
 LEFT JOIN (
@@ -62,8 +68,8 @@ LEFT JOIN (
         _Fld20665RRef,
         _Fld20666RRef,
         _Fld20667RRef
-) rnVypuskProd_base
-    ON rnVypuskProd_base._RecorderRRef = docOtchetyPoProd._IDRRef
+) rnVypuskProd
+    ON rnVypuskProd._RecorderRRef = docOtchetyPoProd._IDRRef
 
 
 LEFT JOIN (
@@ -73,7 +79,7 @@ LEFT JOIN (
     FROM _InfoRg25440
     GROUP BY _RecorderRRef
 ) rsColichRezov
-    ON rnVypuskProd_base._RecorderRRef = rsColichRezov._RecorderRRef
+    ON rnVypuskProd._RecorderRRef = rsColichRezov._RecorderRRef
 
 LEFT JOIN (
     SELECT 
@@ -82,7 +88,7 @@ LEFT JOIN (
     FROM _InfoRg24651
     GROUP BY _Fld24657RRef
 ) rsRemonty
-    ON rnVypuskProd_base._RecorderRRef = rsRemonty._Fld24657RRef
+    ON rnVypuskProd._RecorderRRef = rsRemonty._Fld24657RRef
 
 LEFT JOIN (
     SELECT 
@@ -91,13 +97,13 @@ LEFT JOIN (
     FROM _InfoRg25196
     GROUP BY _Fld25202RRef
 ) rsProstoi
-    ON rnVypuskProd_base._RecorderRRef = rsProstoi._Fld25202RRef
+    ON rnVypuskProd._RecorderRRef = rsProstoi._Fld25202RRef
 
 LEFT JOIN _Reference151 sprNomenklatura
-    ON rnVypuskProd_base._Fld20666RRef = sprNomenklatura._IDRRef
+    ON rnVypuskProd._Fld20666RRef = sprNomenklatura._IDRRef
 
 LEFT JOIN _Reference170 sprVidyPodrazdel
-    ON rnVypuskProd_base._Fld20665RRef = sprVidyPodrazdel._IDRRef
+    ON rnVypuskProd._Fld20665RRef = sprVidyPodrazdel._IDRRef
 
 LEFT JOIN _Enum23693 enumVidySmen
     ON docOtchetyPoProd._Fld23714RRef = enumVidySmen._IDRRef
@@ -137,7 +143,7 @@ AS DECIMAL(10,2)) defectProzent
 
     GROUP BY rnZatratyNaVyplatu._RecorderRRef
 ) zat
-    ON rnVypuskProd_base._RecorderRRef = zat._RecorderRRef
+    ON rnVypuskProd._RecorderRRef = zat._RecorderRRef
 
 LEFT JOIN (
     SELECT 
@@ -161,12 +167,12 @@ LEFT JOIN (
     ) t
     WHERE rn = 1
 ) rsVremiaIzhotovlenia
-    ON rnVypuskProd_base._Fld20665RRef = rsVremiaIzhotovlenia._Fld24500RRef
-   AND rnVypuskProd_base._Fld20667RRef = rsVremiaIzhotovlenia._Fld25310RRef
+    ON rnVypuskProd._Fld20665RRef = rsVremiaIzhotovlenia._Fld24500RRef
+   AND rnVypuskProd._Fld20667RRef = rsVremiaIzhotovlenia._Fld25310RRef
 
 --
 
 WHERE sprVidyPodrazdel._Description LIKE N'Цех%'
 AND enumVidySmen._EnumOrder IS NOT NULL
 
-ORDER BY DATEADD(YEAR, -2000, rnVypuskProd_base.Perio) DESC
+ORDER BY DATEADD(YEAR, -2000, rnVypuskProd.Perio) DESC
