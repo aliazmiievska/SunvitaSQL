@@ -100,7 +100,7 @@ SELECT
     ) + 'min'   AS BASE11_PROSTOI_TIME,
 
     -- BASE12_EXECUTANTS_COUNT (other reg)
-    ISNULL(sotr_count.executantsCount, 0) AS BASE12_EXECUTANTS_COUNT
+    sotr_count.executantsCount AS BASE12_EXECUTANTS_COUNT
 
 FROM _Document426 docOtchetyPoProd
 
@@ -222,8 +222,7 @@ LEFT JOIN (
 
 ---------------------------------------------------------------------------------------
 
-WHERE enumVidySmen._EnumOrder IS NOT NULL -- через це мін рік - 2023
-AND sprVidyPodrazdel._Description LIKE N'Цех%' -- бо Цех Лінія.. нема цеху - нема лінії
+WHERE sprVidyPodrazdel._Description LIKE N'Цех%' -- бо Цех Лінія.. нема цеху - нема лінії
 AND docOtchetyPoProd._Posted  = 1
 AND docOtchetyPoProd._Marked = 0
 
