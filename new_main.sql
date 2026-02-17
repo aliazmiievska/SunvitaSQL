@@ -1,4 +1,4 @@
-SELECT
+SELECT TOP 1000
 
     -- BAZA (nonduplicatable)
     docOtchetyPoProd._IDRRef BAZA,
@@ -50,9 +50,10 @@ SELECT
     CAST( DATEADD(
         MINUTE,
         CASE 
-            WHEN ISNULL(wm.WorkMinutes, 0) > 100000 
-                 OR ISNULL(wm.WorkMinutes, 0) < 0
-            THEN 0
+            WHEN 
+                ISNULL(wm.WorkMinutes, 0) > 100000 
+                OR ISNULL(wm.WorkMinutes, 0) < 0
+                THEN 0
             ELSE ISNULL(wm.WorkMinutes, 0)
         END,
         0 )
@@ -194,7 +195,16 @@ AS DECIMAL(10,2)) defectProzent
 LEFT JOIN (
     SELECT 
         _Fld24657RRef,
-        SUM(DATEDIFF(MINUTE, _Fld24655, _Fld24656)) RepairMinutes
+        SUM(
+            CASE 
+                WHEN _Fld24655 IS NULL 
+                    OR _Fld24656 IS NULL 
+                    OR _Fld24656 <= _Fld24655
+                    OR DATEDIFF(MINUTE, _Fld24655, _Fld24656) > 1440
+                THEN NULL
+            ELSE DATEDIFF(MINUTE, _Fld24655, _Fld24656)
+        END
+) AS RepairMinutes
     FROM _InfoRg24651
     GROUP BY _Fld24657RRef
 ) rsRemonty
@@ -204,7 +214,16 @@ LEFT JOIN (
 LEFT JOIN (
     SELECT 
         _Fld25202RRef,
-        SUM(DATEDIFF(MINUTE, _Fld25199, _Fld25200)) AS DowntimeMinutes
+        SUM(
+            CASE 
+                WHEN _Fld25199 IS NULL 
+                    OR _Fld25200 IS NULL 
+                    OR _Fld25200 <= _Fld25199
+                THEN NULL
+            ELSE DATEDIFF(MINUTE, _Fld25199, _Fld25200)
+        END
+) AS DowntimeMinutes
+
     FROM _InfoRg25196
     GROUP BY _Fld25202RRef
 ) rsProstoi
