@@ -1,4 +1,4 @@
-SELECT TOP 10
+SELECT 
 
     -- BAZA (nonduplicatable)
     docOtchetyPoProd._IDRRef BAZA,
