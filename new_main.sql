@@ -260,7 +260,10 @@ LEFT JOIN (
 ---------------------------------------------------------------------------------------
 
 WHERE sprVidyPodrazdel._Description LIKE N'Цех%' -- бо Цех Лінія.. нема цеху - нема лінії
-AND docOtchetyPoProd._Posted  = 1
-AND docOtchetyPoProd._Marked = 0
+AND sprVidyPodrazdel._Description <> 'Цех №1' -- Андрій сказав
+AND sprVidyPodrazdel._Description <> 'Цех №2' -- Андрій сказав
+AND sprVidyPodrazdel._Description <> 'Цех №2 (Лінія1)' -- Андрій сказав
+AND docOtchetyPoProd._Posted  = 1 -- проведений
+AND docOtchetyPoProd._Marked = 0 -- не помічений на видалення
 
 ORDER BY docOtchetyPoProd._Date_Time DESC
