@@ -1,38 +1,43 @@
-;WITH Props AS (
+;WITH
+    Props
+    AS
+    (
 
-    SELECT
+        SELECT
 
-        regsvoy._Fld17698_RRRef AS NomenklaturaRRef,       -- посилання на номенклатуру
-        plansvoy._Description   AS НазваВластивості,
-        refsvoy._Description    AS Значення
+            regsvoy._Fld17698_RRRef AS NomenklaturaRRef, -- посилання на номенклатуру
+            plansvoy._Description   AS НазваВластивості,
+            refsvoy._Description    AS Значення
 
-    FROM _InfoRg17697 AS regsvoy
+        FROM _InfoRg17697 AS regsvoy
 
-    LEFT JOIN _Chrc1016   AS plansvoy 
-        ON regsvoy._Fld17699RRef = plansvoy._IDRRef
+            LEFT JOIN _Chrc1016   AS plansvoy
+            ON regsvoy._Fld17699RRef = plansvoy._IDRRef
 
-    LEFT JOIN _Reference93 AS refsvoy 
-        ON regsvoy._Fld17700_RRRef = refsvoy._IDRRef
+            LEFT JOIN _Reference93 AS refsvoy
+            ON regsvoy._Fld17700_RRRef = refsvoy._IDRRef
 
-    WHERE plansvoy._Description IN (N'Категорія', N'Бренд', N'Кількість в упаковці', N'SKU')
+        WHERE plansvoy._Description IN (N'Категорія', N'Бренд', N'Кількість в упаковці', N'SKU')
 
-),
+    ),
 
-PropsPivot AS (
+    PropsPivot
+    AS
+    (
 
-    SELECT
+        SELECT
 
-        p.NomenklaturaRRef,
-        [Категорія]              = MAX(CASE WHEN p.НазваВластивості = N'Категорія'             THEN p.Значення END),
-        [Бренд]                  = MAX(CASE WHEN p.НазваВластивості = N'Бренд'                 THEN p.Значення END),
-        [Кількість в упаковці]   = MAX(CASE WHEN p.НазваВластивості = N'Кількість в упаковці'  THEN p.Значення END),
-        [SKU]                    = MAX(CASE WHEN p.НазваВластивості = N'SKU'                   THEN p.Значення END)
+            p.NomenklaturaRRef,
+            [Категорія]              = MAX(CASE WHEN p.НазваВластивості = N'Категорія'             THEN p.Значення END),
+            [Бренд]                  = MAX(CASE WHEN p.НазваВластивості = N'Бренд'                 THEN p.Значення END),
+            [Кількість в упаковці]   = MAX(CASE WHEN p.НазваВластивості = N'Кількість в упаковці'  THEN p.Значення END),
+            [SKU]                    = MAX(CASE WHEN p.НазваВластивості = N'SKU'                   THEN p.Значення END)
 
-    FROM Props p
+        FROM Props p
 
-    GROUP BY p.NomenklaturaRRef
-    
-)
+        GROUP BY p.NomenklaturaRRef
+
+    )
 
 SELECT
 
@@ -55,13 +60,13 @@ SELECT
 
 FROM _Reference149 AS nom
 
-LEFT JOIN _Reference51  AS r51     
+    LEFT JOIN _Reference51  AS r51
     ON r51._IDRRef       = nom._Fld2306RRef
 
-LEFT JOIN _Reference181 AS r181 
+    LEFT JOIN _Reference181 AS r181
     ON r181._IDRRef      = nom._Fld25116RRef
 
-LEFT JOIN PropsPivot    AS pp   
+    LEFT JOIN PropsPivot    AS pp
     ON pp.NomenklaturaRRef = nom._IDRRef
 
 -- WHERE nom._Marked = 0  -- розкоментуй, якщо треба виключити помічені на видалення
